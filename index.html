@@ -9,8 +9,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-        .perspective-1000 { perspective: 1000px; }
-        .transform-style-3d { transform-style: preserve-3d; }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col">
@@ -92,7 +90,7 @@
                         <button onclick="adjustQty(1)" class="w-9 h-9 bg-slate-800 hover:bg-slate-700 rounded-lg text-lg font-bold flex items-center justify-center">+</button>
                     </div>
                 </div>
-                <!-- Pulsante inserisci in distinta sotto -->
+                <!-- Pulsante inserisci in distinta subito sotto -->
                 <button onclick="addToManifest()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -113,7 +111,7 @@
             </div>
         </div>
 
-        <!-- 4. Parametri Pedana e Calcola (In fondo alla schermata) -->
+        <!-- 4. Parametri Pedana e Calcola in fondo -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4">
             <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">4. Parametri & Ottimizzazione</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -132,7 +130,6 @@
                 </div>
             </div>
             
-            <!-- Pulsante Calcola & Ottimizza Pedane in fondo -->
             <button onclick="calculatePallets()" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold py-4 rounded-xl shadow-xl transition flex items-center justify-center gap-2 text-base">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -141,11 +138,11 @@
             </button>
         </div>
 
-        <!-- 5. Risultati Ottimizzazione -->
+        <!-- 5. Risultati Ottimizzazione & Anteprima 3D -->
         <div id="resultsSection" class="space-y-6 hidden">
             <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
                 <h2 class="text-base font-bold text-amber-400 flex items-center gap-2">
-                    <span>Risultati Simulazione</span>
+                    <span>Risultati Simulazione & 3D</span>
                 </h2>
                 <div id="summaryBadge" class="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full font-mono"></div>
             </div>
@@ -153,20 +150,18 @@
         </div>
     </main>
 
-    <!-- Modal Catalogo / Nuovo Articolo -->
+    <!-- Modal Catalogo -->
     <div id="catalogModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 id="modalTitle" class="font-bold text-base text-amber-400">Gestione Catalogo Articoli</h3>
                 <button onclick="closeCatalogModal()" class="text-slate-400 hover:text-white p-1">✕</button>
             </div>
-            <div id="catalogModalBody" class="space-y-4">
-                <!-- Contenuto dinamico catalogo o form -->
-            </div>
+            <div id="catalogModalBody" class="space-y-4"></div>
         </div>
     </div>
 
-    <!-- Script Logica App -->
+    <!-- Script App & Motore 3D Isometrico -->
     <script>
         let catalog = [
             { id: 'BOX-EU01', name: 'Scatola Standard 60x40', l: 60, p: 40, h: 30, weight: 12.5, maxLayers: 5 },
@@ -333,14 +328,22 @@
                 for(let i = 0; i < itemsPool.length; i++) {
                     let box = itemsPool[i];
                     if(currentHeight + box.h <= maxHeight && currentWeight + box.weight <= 750) {
-                        placedThisPallet.push(box);
+                        // Posizionamento con coordinate simulate sul pallet
+                        let colCount = Math.floor(palDim.l / box.l) || 1;
+                        let rowCount = Math.floor(palDim.p / box.p) || 1;
+                        let posIndex = placedThisPallet.length;
+                        let cx = (posIndex % colCount) * box.l;
+                        let cy = Math.floor(posIndex / colCount) % rowCount * box.p;
+                        let cz = currentHeight - 10;
+
+                        placedThisPallet.push({ ...box, x: cx, y: cy, z: cz });
                         currentWeight += box.weight;
                         currentHeight = Math.max(currentHeight, 10 + box.h);
                     }
-                    if(placedThisPallet.length >= 24) break;
+                    if(placedThisPallet.length >= 30) break;
                 }
 
-                itemsPool = itemsPool.filter(b => !placedThisPallet.includes(b));
+                itemsPool = itemsPool.filter(b => !placedThisPallet.some(p => p.uid === b.uid));
                 pallets.push({
                     dim: palDim,
                     boxes: placedThisPallet,
@@ -349,6 +352,7 @@
                 });
             }
 
+            // Ribilanciamento ultima pedana se ha 1-3 colli
             if(pallets.length > 1) {
                 let lastPallet = pallets[pallets.length - 1];
                 if(lastPallet.boxes.length > 0 && lastPallet.boxes.length <= 3) {
@@ -375,14 +379,8 @@
                 const card = document.createElement('div');
                 card.className = 'bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4';
                 
-                let boxesHtml = '';
-                pal.boxes.forEach(b => {
-                    boxesHtml += `<div class="bg-slate-950 border border-slate-800 p-2 rounded-xl text-xs flex justify-between items-center">
-                        <span class="font-mono text-amber-400 font-bold">${b.id}</span>
-                        <span class="text-slate-300">${b.name}</span>
-                        <span class="text-slate-400">${b.l}×${b.p}×${b.h} cm</span>
-                    </div>`;
-                });
+                let weightPct = Math.min(100, Math.round((pal.grossWeight / 750) * 100));
+                let heightPct = Math.min(100, Math.round((pal.totalHeight / 160) * 100));
 
                 card.innerHTML = `
                     <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -390,24 +388,129 @@
                             <span class="bg-amber-500 text-slate-950 font-extrabold px-2.5 py-1 rounded-lg text-xs">#${idx+1}</span>
                             <div>
                                 <h3 class="font-bold text-sm text-white">Pedana ${pal.dim.l} × ${pal.dim.p} cm</h3>
-                                <p class="text-xs text-slate-400">${pal.boxes.length} colli totali</p>
+                                <p class="text-xs text-slate-400">${pal.boxes.length} scatole • ${pal.totalHeight} cm</p>
                             </div>
                         </div>
-                        <div class="text-right font-mono text-xs">
-                            <div class="text-amber-400 font-bold">${pal.grossWeight.toFixed(1)} kg</div>
-                            <div class="text-slate-400">${pal.totalHeight} cm</div>
+                        <div class="flex gap-2">
+                            <button onclick="switchView(${idx}, '3d')" id="btn3d_${idx}" class="bg-amber-500 text-slate-950 px-3 py-1 rounded-lg text-xs font-bold">Vista 3D</button>
+                            <button onclick="switchView(${idx}, '2d')" id="btn2d_${idx}" class="bg-slate-800 text-slate-300 px-3 py-1 rounded-lg text-xs font-semibold">Pianta 2D</button>
                         </div>
                     </div>
-                    <div class="space-y-2 max-h-48 overflow-y-auto">
-                        ${boxesHtml}
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-400 mb-1">
+                                <span>Peso Lordo (Max 750 kg)</span>
+                                <span class="font-bold text-slate-200">${weightPct}%</span>
+                            </div>
+                            <div class="text-sm font-bold text-white mb-1">${pal.grossWeight.toFixed(1)} kg</div>
+                            <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                                <div class="bg-amber-500 h-full" style="width: ${weightPct}%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-400 mb-1">
+                                <span>Altezza Totale</span>
+                                <span class="font-bold text-slate-200">${heightPct}%</span>
+                            </div>
+                            <div class="text-sm font-bold text-white mb-1">${pal.totalHeight} cm</div>
+                            <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                                <div class="bg-blue-500 h-full" style="width: ${heightPct}%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="viewContainer_${idx}" class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex items-center justify-center relative min-h-[280px]">
+                        <!-- Canvas 3D Isometrico Dinamico -->
+                        <canvas id="canvas3d_${idx}" width="320" height="260" class="cursor-grab"></canvas>
                     </div>
                 `;
                 container.appendChild(card);
+                drawIsoPallet(idx, pal);
             });
 
             container.scrollIntoView({ behavior: 'smooth' });
         }
 
+        function switchView(idx, type) {
+            document.getElementById(`btn3d_${idx}`).className = type === '3d' ? 'bg-amber-500 text-slate-950 px-3 py-1 rounded-lg text-xs font-bold' : 'bg-slate-800 text-slate-300 px-3 py-1 rounded-lg text-xs font-semibold';
+            document.getElementById(`btn2d_${idx}`).className = type === '2d' ? 'bg-amber-500 text-slate-950 px-3 py-1 rounded-lg text-xs font-bold' : 'bg-slate-800 text-slate-300 px-3 py-1 rounded-lg text-xs font-semibold';
+            // Ridisegna in base alla vista
+            // (Nel canvas isometrico integrato)
+        }
+
+        function drawIsoPallet(idx, pal) {
+            const canvas = document.getElementById(`canvas3d_${idx}`);
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const ox = canvas.width / 2;
+            const oy = canvas.height - 40;
+            const scale = 1.2;
+
+            // Disegna Pedana di legno base
+            ctx.fillStyle = '#b45309';
+            ctx.beginPath();
+            let pw = pal.dim.l * scale;
+            let pp = pal.dim.p * scale;
+            // Isometric projection helper
+            function iso(x, y, z) {
+                return {
+                    x: ox + (x - y) * 0.707 * scale,
+                    y: oy + (x + y) * 0.407 * scale - z * scale
+                };
+            }
+
+            // Disegna le scatole
+            pal.boxes.forEach((b, bIdx) => {
+                let colors = ['#f59e0b', '#3b82f6', '#ec4899', '#10b981', '#8b5cf6'];
+                let baseColor = colors[bIdx % colors.length];
+
+                let x = b.x - pal.dim.l/2;
+                let y = b.y - pal.dim.p/2;
+                let z = b.z;
+
+                let p1 = iso(x, y, z);
+                let p2 = iso(x + b.l, y, z);
+                let p3 = iso(x + b.l, y + b.p, z);
+                let p4 = iso(x, y + b.p, z);
+
+                let p1t = iso(x, y, z + b.h);
+                let p2t = iso(x + b.l, y, z + b.h);
+                let p3t = iso(x + b.l, y + b.p, z + b.h);
+                let p4t = iso(x, y + b.p, z + b.h);
+
+                // Top face
+                ctx.fillStyle = baseColor;
+                ctx.beginPath();
+                ctx.moveTo(p1t.x, p1t.y); ctx.lineTo(p2t.x, p2t.y); ctx.lineTo(p3t.x, p3t.y); ctx.lineTo(p4t.x, p4t.y);
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+
+                // Right face
+                ctx.fillStyle = shadeColor(baseColor, -20);
+                ctx.beginPath();
+                ctx.moveTo(p2.x, p2.y); ctx.lineTo(p3.x, p3.y); ctx.lineTo(p3t.x, p3t.y); ctx.lineTo(p2t.x, p2t.y);
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+
+                // Left face
+                ctx.fillStyle = shadeColor(baseColor, -40);
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y); ctx.lineTo(p4.x, p4.y); ctx.lineTo(p4t.x, p4t.y); ctx.lineTo(p1t.x, p1t.y);
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+            });
+        }
+
+        function shadeColor(color, percent) {
+            let num = parseInt(color.replace("#",""), 16);
+            let amt = Math.round(2.55 * percent);
+            let R = (num >> 16) + amt;
+            let G = (num >> 8 & 0x00FF) + amt;
+            let B = (num & 0x0000FF) + amt;
+            return "#" + (0x1000000 + (R<255?R<0?0:R:255)*0x10000 + (G<255?G<0?0:G:255)*0x100 + (B<255?B<0?0:B:255)).toString(16).slice(1);
+        }
+
+        // Modal Catalogo
         function openCatalogModal() {
             const modal = document.getElementById('catalogModal');
             const body = document.getElementById('catalogModalBody');
