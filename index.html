@@ -1,1 +1,571 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PalletOptimizer Pro</title>
+    <link rel="manifest" href="./manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 px-4 py-3 shadow-lg">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-amber-500 p-2 rounded-xl text-slate-950 shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight flex items-center gap-2">
+                        PalletOptimizer <span class="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono">PRO</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Ottimizzazione e Gestione Distinte</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="openCatalogModal()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition">
+                    📦 Catalogo (<span id="catalogCount">0</span>)
+                </button>
+                <button onclick="printReport()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-2 rounded-lg text-slate-300 hover:text-white transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
 
+    <!-- Main Content -->
+    <main class="flex-1 max-w-4xl w-full mx-auto p-4 space-y-6 pb-24">
+        <!-- 1. Campi Cliente e Ordine -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400 mb-3">1. Dati di Riferimento Spedizione</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Cliente</label>
+                    <input type="text" id="orderClient" placeholder="Nome Cliente / Azienda" oninput="saveOrderMeta()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-amber-500 transition">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Ordine</label>
+                    <input type="text" id="orderNumber" placeholder="Riferimento Ordine / DDT" oninput="saveOrderMeta()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-amber-500 transition">
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Seleziona Articoli da Spedire -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">2. Seleziona Articoli da Spedire</h2>
+                <div class="flex items-center gap-2">
+                    <button onclick="openNewArticleModal()" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition">+ Nuovo</button>
+                    <button onclick="exportJSON()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2.5 py-1.5 rounded-lg border border-slate-700 transition">Esporta JSON</button>
+                    <label class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2.5 py-1.5 rounded-lg border border-slate-700 cursor-pointer transition">
+                        Importa <input type="file" accept=".json" onchange="importJSON(event)" class="hidden">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Griglia Articoli Disponibili -->
+            <div id="articlesSelectionGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <!-- Generato da JS -->
+            </div>
+
+            <!-- Pannello Articolo Selezionato e Quantità -->
+            <div id="selectedArticlePanel" class="bg-slate-950 border border-slate-800 rounded-xl p-3 hidden space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-xs text-amber-400 font-bold uppercase">Articolo Selezionato</div>
+                        <div id="selArtName" class="text-sm font-semibold text-white">---</div>
+                        <div id="selArtInfo" class="text-xs text-slate-400">---</div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="adjustQty(-1)" class="w-9 h-9 bg-slate-800 hover:bg-slate-700 rounded-lg text-lg font-bold flex items-center justify-center">-</button>
+                        <input type="number" id="selArtQty" value="1" min="1" class="w-16 bg-slate-900 border border-slate-700 text-center rounded-lg py-2 text-sm font-bold focus:outline-none focus:border-amber-500">
+                        <button onclick="adjustQty(1)" class="w-9 h-9 bg-slate-800 hover:bg-slate-700 rounded-lg text-lg font-bold flex items-center justify-center">+</button>
+                    </div>
+                </div>
+                <!-- Pulsante inserisci in distinta sotto -->
+                <button onclick="addToManifest()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Inserisci in Distinta di Carico
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. Distinta Colli Attuale -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">3. Distinta Colli Inseriti</h2>
+                <span id="manifestCountBadge" class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-mono">0 colli</span>
+            </div>
+            <div id="manifestList" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                <div class="text-center py-6 text-slate-500 text-sm">Nessun articolo inserito nella distinta.</div>
+            </div>
+        </div>
+
+        <!-- 4. Parametri Pedana e Calcola (In fondo alla schermata) -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">4. Parametri & Ottimizzazione</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Formato Pedana</label>
+                    <select id="palletSize" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-amber-500">
+                        <option value="80x120">80x120 cm (EPAL Standard)</option>
+                        <option value="114x114">114x114 cm (Americana)</option>
+                        <option value="80x80">80x80 cm (Quoziente 80)</option>
+                        <option value="60x80">60x80 cm (Mezzo EPAL)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Altezza Max (cm)</label>
+                    <input type="number" id="maxHeight" value="160" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-amber-500">
+                </div>
+            </div>
+            
+            <!-- Pulsante Calcola & Ottimizza Pedane in fondo -->
+            <button onclick="calculatePallets()" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold py-4 rounded-xl shadow-xl transition flex items-center justify-center gap-2 text-base">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Calcola & Ottimizza Pedane
+            </button>
+        </div>
+
+        <!-- 5. Risultati Ottimizzazione -->
+        <div id="resultsSection" class="space-y-6 hidden">
+            <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
+                <h2 class="text-base font-bold text-amber-400 flex items-center gap-2">
+                    <span>Risultati Simulazione</span>
+                </h2>
+                <div id="summaryBadge" class="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full font-mono"></div>
+            </div>
+            <div id="palletsResultContainer" class="space-y-6"></div>
+        </div>
+    </main>
+
+    <!-- Modal Catalogo / Nuovo Articolo -->
+    <div id="catalogModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 id="modalTitle" class="font-bold text-base text-amber-400">Gestione Catalogo Articoli</h3>
+                <button onclick="closeCatalogModal()" class="text-slate-400 hover:text-white p-1">✕</button>
+            </div>
+            <div id="catalogModalBody" class="space-y-4">
+                <!-- Contenuto dinamico catalogo o form -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Logica App -->
+    <script>
+        let catalog = [
+            { id: 'BOX-EU01', name: 'Scatola Standard 60x40', l: 60, p: 40, h: 30, weight: 12.5, maxLayers: 5 },
+            { id: 'BOX-EU02', name: 'Scatola Media 40x30', l: 40, p: 30, h: 25, weight: 8.0, maxLayers: 6 },
+            { id: 'BOX-EU03', name: 'Scatola Piccola 30x20', l: 30, p: 20, h: 20, weight: 4.5, maxLayers: 8 },
+            { id: 'BOX-IND4', name: 'Cartone Grande Industriale', l: 80, p: 60, h: 40, weight: 22.0, maxLayers: 4 }
+        ];
+        let manifest = [];
+        let selectedArticleId = null;
+
+        function saveToStorage() {
+            localStorage.setItem('po_catalog', JSON.stringify(catalog));
+            localStorage.setItem('po_manifest', JSON.stringify(manifest));
+        }
+        function loadFromStorage() {
+            const savedCat = localStorage.getItem('po_catalog');
+            if(savedCat) catalog = JSON.parse(savedCat);
+            const savedMan = localStorage.getItem('po_manifest');
+            if(savedMan) manifest = JSON.parse(savedMan);
+            const cli = localStorage.getItem('po_client');
+            if(cli) document.getElementById('orderClient').value = cli;
+            const ord = localStorage.getItem('po_order');
+            if(ord) document.getElementById('orderNumber').value = ord;
+        }
+        function saveOrderMeta() {
+            localStorage.setItem('po_client', document.getElementById('orderClient').value);
+            localStorage.setItem('po_order', document.getElementById('orderNumber').value);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFromStorage();
+            renderArticlesSelection();
+            renderManifest();
+            document.getElementById('catalogCount').innerText = catalog.length;
+        });
+
+        function renderArticlesSelection() {
+            const grid = document.getElementById('articlesSelectionGrid');
+            grid.innerHTML = '';
+            catalog.forEach(art => {
+                const isSelected = selectedArticleId === art.id;
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl border cursor-pointer transition flex flex-col justify-between ${isSelected ? 'bg-amber-500/10 border-amber-500 shadow-md' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`;
+                div.onclick = () => selectArticle(art.id);
+                div.innerHTML = `
+                    <div>
+                        <div class="text-xs font-mono text-amber-400 font-bold">${art.id}</div>
+                        <div class="text-xs font-semibold text-white truncate mt-0.5">${art.name}</div>
+                        <div class="text-[10px] text-slate-400 mt-1">${art.l}×${art.p}×${art.h} cm</div>
+                    </div>
+                    <div class="mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                        <span>${art.weight} kg</span>
+                        <span class="text-amber-400 font-bold">Max ${art.maxLayers}p</span>
+                    </div>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        function selectArticle(id) {
+            selectedArticleId = id;
+            const art = catalog.find(a => a.id === id);
+            if(art) {
+                document.getElementById('selArtName').innerText = `${art.id} - ${art.name}`;
+                document.getElementById('selArtInfo').innerText = `Dimensioni: ${art.l}×${art.p}×${art.h} cm | Peso: ${art.weight} kg`;
+                document.getElementById('selArtQty').value = 1;
+                document.getElementById('selectedArticlePanel').classList.remove('hidden');
+            }
+            renderArticlesSelection();
+        }
+
+        function adjustQty(delta) {
+            const input = document.getElementById('selArtQty');
+            let val = parseInt(input.value) || 1;
+            val = Math.max(1, val + delta);
+            input.value = val;
+        }
+
+        function addToManifest() {
+            if(!selectedArticleId) return;
+            const qty = parseInt(document.getElementById('selArtQty').value) || 1;
+            const art = catalog.find(a => a.id === selectedArticleId);
+            if(!art) return;
+
+            const existing = manifest.find(item => item.id === art.id);
+            if(existing) {
+                existing.qty += qty;
+            } else {
+                manifest.push({ ...art, qty });
+            }
+            saveToStorage();
+            renderManifest();
+            document.getElementById('selArtQty').value = 1;
+        }
+
+        function removeFromManifest(id) {
+            manifest = manifest.filter(item => item.id !== id);
+            saveToStorage();
+            renderManifest();
+        }
+
+        function renderManifest() {
+            const list = document.getElementById('manifestList');
+            const badge = document.getElementById('manifestCountBadge');
+            const totalCols = manifest.reduce((acc, item) => acc + item.qty, 0);
+            badge.innerText = `${totalCols} colli`;
+
+            if(manifest.length === 0) {
+                list.innerHTML = `<div class="text-center py-6 text-slate-500 text-sm">Nessun articolo inserito nella distinta.</div>`;
+                return;
+            }
+
+            list.innerHTML = '';
+            manifest.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between';
+                div.innerHTML = `
+                    <div>
+                        <div class="text-xs font-mono text-amber-400 font-bold">${item.id}</div>
+                        <div class="text-sm font-semibold text-white">${item.name}</div>
+                        <div class="text-xs text-slate-400">${item.l}×${item.p}×${item.h} cm • ${item.weight} kg cad.</div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-sm font-bold font-mono text-amber-400">
+                            ${item.qty} pz
+                        </div>
+                        <button onclick="removeFromManifest('${item.id}')" class="text-rose-400 hover:text-rose-300 p-1 text-sm font-bold">✕</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function calculatePallets() {
+            if(manifest.length === 0) {
+                alert('Inserisci almeno un articolo nella distinta di carico prima di calcolare.');
+                return;
+            }
+
+            const sizeKey = document.getElementById('palletSize').value;
+            const maxHeight = parseFloat(document.getElementById('maxHeight').value) || 160;
+            
+            let palDim = { 
+                '80x120': {l:80, p:120, name:'80 × 120 cm (EPAL Standard)'}, 
+                '114x114': {l:114, p:114, name:'114 × 114 cm (Americana)'}, 
+                '80x80': {l:80, p:80, name:'80 × 80 cm (Quoziente 80)'}, 
+                '60x80': {l:60, p:80, name:'60 × 80 cm (Mezzo EPAL)'} 
+            }[sizeKey] || {l:80, p:120, name:'80 × 120 cm'};
+
+            let itemsPool = [];
+            manifest.forEach(m => {
+                for(let i=0; i<m.qty; i++) {
+                    itemsPool.push({ ...m, uid: Math.random().toString(36).substr(2, 9) });
+                }
+            });
+
+            let pallets = [];
+            while(itemsPool.length > 0) {
+                let currentPalletBoxes = [];
+                let currentWeight = 22; 
+                let currentHeight = 10; 
+                
+                let placedThisPallet = [];
+                for(let i = 0; i < itemsPool.length; i++) {
+                    let box = itemsPool[i];
+                    if(currentHeight + box.h <= maxHeight && currentWeight + box.weight <= 750) {
+                        placedThisPallet.push(box);
+                        currentWeight += box.weight;
+                        currentHeight = Math.max(currentHeight, 10 + box.h);
+                    }
+                    if(placedThisPallet.length >= 24) break;
+                }
+
+                itemsPool = itemsPool.filter(b => !placedThisPallet.includes(b));
+                pallets.push({
+                    dim: palDim,
+                    boxes: placedThisPallet,
+                    grossWeight: currentWeight,
+                    totalHeight: currentHeight
+                });
+            }
+
+            if(pallets.length > 1) {
+                let lastPallet = pallets[pallets.length - 1];
+                if(lastPallet.boxes.length > 0 && lastPallet.boxes.length <= 3) {
+                    let prevPallet = pallets[pallets.length - 2];
+                    if(prevPallet.boxes.length > 4) {
+                        let moved = prevPallet.boxes.splice(-lastPallet.boxes.length);
+                        lastPallet.boxes = moved.concat(lastPallet.boxes);
+                        prevPallet.grossWeight = 22 + prevPallet.boxes.reduce((s,b)=>s+b.weight,0);
+                        lastPallet.grossWeight = 22 + lastPallet.boxes.reduce((s,b)=>s+b.weight,0);
+                    }
+                }
+            }
+
+            renderResults(pallets);
+        }
+
+        function renderResults(pallets) {
+            const container = document.getElementById('palletsResultContainer');
+            container.innerHTML = '';
+            document.getElementById('resultsSection').classList.remove('hidden');
+            document.getElementById('summaryBadge').innerText = `${pallets.length} Pedane Generate`;
+
+            pallets.forEach((pal, idx) => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4';
+                
+                let boxesHtml = '';
+                pal.boxes.forEach(b => {
+                    boxesHtml += `<div class="bg-slate-950 border border-slate-800 p-2 rounded-xl text-xs flex justify-between items-center">
+                        <span class="font-mono text-amber-400 font-bold">${b.id}</span>
+                        <span class="text-slate-300">${b.name}</span>
+                        <span class="text-slate-400">${b.l}×${b.p}×${b.h} cm</span>
+                    </div>`;
+                });
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-amber-500 text-slate-950 font-extrabold px-2.5 py-1 rounded-lg text-xs">#${idx+1}</span>
+                            <div>
+                                <h3 class="font-bold text-sm text-white">Pedana ${pal.dim.l} × ${pal.dim.p} cm</h3>
+                                <p class="text-xs text-slate-400">${pal.boxes.length} colli totali</p>
+                            </div>
+                        </div>
+                        <div class="text-right font-mono text-xs">
+                            <div class="text-amber-400 font-bold">${pal.grossWeight.toFixed(1)} kg</div>
+                            <div class="text-slate-400">${pal.totalHeight} cm</div>
+                        </div>
+                    </div>
+                    <div class="space-y-2 max-h-48 overflow-y-auto">
+                        ${boxesHtml}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            container.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function openCatalogModal() {
+            const modal = document.getElementById('catalogModal');
+            const body = document.getElementById('catalogModalBody');
+            modal.classList.remove('hidden');
+            
+            let html = `
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Articoli in Catalogo</h4>
+                        <button onclick="openNewArticleForm()" class="bg-amber-500 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg">+ Aggiungi Articolo</button>
+                    </div>
+                    <div class="space-y-2 max-h-80 overflow-y-auto">
+            `;
+            catalog.forEach(art => {
+                html += `
+                    <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
+                        <div>
+                            <div class="text-xs font-mono text-amber-400 font-bold">${art.id}</div>
+                            <div class="text-sm font-semibold text-white">${art.name}</div>
+                            <div class="text-xs text-slate-400">${art.l}×${art.p}×${art.h} cm • ${art.weight} kg</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="editCatalogArticle('${art.id}')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg text-xs">Modifica</button>
+                            <button onclick="deleteCatalogArticle('${art.id}')" class="text-rose-400 hover:text-rose-300 p-1">✕</button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div></div>`;
+            body.innerHTML = html;
+        }
+
+        function closeCatalogModal() {
+            document.getElementById('catalogModal').classList.add('hidden');
+        }
+
+        function openNewArticleForm(editId = null) {
+            const body = document.getElementById('catalogModalBody');
+            const art = editId ? catalog.find(a => a.id === editId) : { id: '', name: '', l: 40, p: 30, h: 25, weight: 10, maxLayers: 5 };
+            
+            body.innerHTML = `
+                <form onsubmit="saveCatalogArticle(event, '${editId || ''}')" class="space-y-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Codice Articolo</label>
+                        <input type="text" id="artIdInput" value="${art.id}" ${editId ? 'readonly' : ''} required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Nome / Descrizione</label>
+                        <input type="text" id="artNameInput" value="${art.name}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Lungh. (cm)</label>
+                            <input type="number" id="artLInput" value="${art.l}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Prof. (cm)</label>
+                            <input type="number" id="artPInput" value="${art.p}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Alt. (cm)</label>
+                            <input type="number" id="artHInput" value="${art.h}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Peso (kg)</label>
+                            <input type="number" step="0.1" id="artWeightInput" value="${art.weight}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Max Piani</label>
+                            <input type="number" id="artMaxLInput" value="${art.maxLayers}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
+                        </div>
+                    </div>
+                    <div class="flex gap-2 pt-2">
+                        <button type="button" onclick="openCatalogModal()" class="w-1/2 bg-slate-800 hover:bg-slate-700 py-2.5 rounded-xl text-xs font-semibold">Annulla</button>
+                        <button type="submit" class="w-1/2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs">Salva Articolo</button>
+                    </div>
+                </form>
+            `;
+        }
+
+        function saveCatalogArticle(e, oldId) {
+            e.preventDefault();
+            const id = document.getElementById('artIdInput').value.trim();
+            const name = document.getElementById('artNameInput').value.trim();
+            const l = parseFloat(document.getElementById('artLInput').value);
+            const p = parseFloat(document.getElementById('artPInput').value);
+            const h = parseFloat(document.getElementById('artHInput').value);
+            const weight = parseFloat(document.getElementById('artWeightInput').value);
+            const maxLayers = parseInt(document.getElementById('artMaxLInput').value);
+
+            if(oldId) {
+                const idx = catalog.findIndex(a => a.id === oldId);
+                if(idx !== -1) catalog[idx] = { id, name, l, p, h, weight, maxLayers };
+            } else {
+                if(catalog.some(a => a.id === id)) {
+                    alert('Esiste già un articolo con questo codice!');
+                    return;
+                }
+                catalog.push({ id, name, l, p, h, weight, maxLayers });
+            }
+            saveToStorage();
+            renderArticlesSelection();
+            document.getElementById('catalogCount').innerText = catalog.length;
+            openCatalogModal();
+        }
+
+        function editCatalogArticle(id) {
+            openNewArticleForm(id);
+        }
+
+        function deleteCatalogArticle(id) {
+            if(confirm('Eliminare questo articolo dal catalogo?')) {
+                catalog = catalog.filter(a => a.id !== id);
+                saveToStorage();
+                renderArticlesSelection();
+                document.getElementById('catalogCount').innerText = catalog.length;
+                openCatalogModal();
+            }
+        }
+
+        function exportJSON() {
+            const data = { catalog, manifest, client: document.getElementById('orderClient').value, order: document.getElementById('orderNumber').value };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `PalletOptimizer_Backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+        }
+
+        function importJSON(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = JSON.parse(evt.target.result);
+                    if(data.catalog) catalog = data.catalog;
+                    if(data.manifest) manifest = data.manifest;
+                    if(data.client) { document.getElementById('orderClient').value = data.client; }
+                    if(data.order) { document.getElementById('orderNumber').value = data.order; }
+                    saveToStorage();
+                    renderArticlesSelection();
+                    renderManifest();
+                    document.getElementById('catalogCount').innerText = catalog.length;
+                    alert('Dati importati con successo!');
+                } catch(err) {
+                    alert('Errore durante la lettura del file JSON.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function printReport() {
+            window.print();
+        }
+    </script>
+</body>
+</html>
