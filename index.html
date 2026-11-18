@@ -14,7 +14,7 @@
 <body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col">
     <!-- Header -->
     <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 px-4 py-3 shadow-lg">
-        <div class="max-w-4xl mx-auto flex items-center justify-between">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <div class="bg-amber-500 p-2 rounded-xl text-slate-950 shadow-md">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -25,12 +25,15 @@
                     <h1 class="font-bold text-lg leading-tight flex items-center gap-2">
                         PalletOptimizer <span class="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono">PRO</span>
                     </h1>
-                    <p class="text-xs text-slate-400">Ottimizzazione e Gestione Distinte</p>
+                    <p class="text-xs text-slate-400">Pallettizzazione intelligente & bilanciamento carichi</p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
                 <button onclick="openCatalogModal()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition">
-                    📦 Catalogo (<span id="catalogCount">0</span>)
+                    📦 Catalogo (<span id="catalogCount">6</span>)
+                </button>
+                <button onclick="shareAppCode()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 shadow-lg transition">
+                    🔗 Condividi App
                 </button>
                 <button onclick="printReport()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-2 rounded-lg text-slate-300 hover:text-white transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -42,107 +45,147 @@
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 max-w-4xl w-full mx-auto p-4 space-y-6 pb-24">
-        <!-- 1. Campi Cliente e Ordine -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 space-y-6 pb-24">
+        <!-- 0. Dati Commessa / Intestazione Spedizione -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
-            <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400 mb-3">1. Dati di Riferimento Spedizione</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1">Cliente</label>
-                    <input type="text" id="orderClient" placeholder="Nome Cliente / Azienda" oninput="saveOrderMeta()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-amber-500 transition">
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1">Ordine</label>
-                    <input type="text" id="orderNumber" placeholder="Riferimento Ordine / DDT" oninput="saveOrderMeta()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-amber-500 transition">
-                </div>
-            </div>
-        </div>
-
-        <!-- 2. Seleziona Articoli da Spedire -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4">
-            <div class="flex items-center justify-between">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">2. Seleziona Articoli da Spedire</h2>
-                <div class="flex items-center gap-2">
-                    <button onclick="openNewArticleModal()" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition">+ Nuovo</button>
-                    <button onclick="exportJSON()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2.5 py-1.5 rounded-lg border border-slate-700 transition">Esporta JSON</button>
-                    <label class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2.5 py-1.5 rounded-lg border border-slate-700 cursor-pointer transition">
-                        Importa <input type="file" accept=".json" onchange="importJSON(event)" class="hidden">
-                    </label>
-                </div>
-            </div>
-
-            <!-- Griglia Articoli Disponibili -->
-            <div id="articlesSelectionGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <!-- Generato da JS -->
-            </div>
-
-            <!-- Pannello Articolo Selezionato e Quantità -->
-            <div id="selectedArticlePanel" class="bg-slate-950 border border-slate-800 rounded-xl p-3 hidden space-y-3">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <div class="text-xs text-amber-400 font-bold uppercase">Articolo Selezionato</div>
-                        <div id="selArtName" class="text-sm font-semibold text-white">---</div>
-                        <div id="selArtInfo" class="text-xs text-slate-400">---</div>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <button onclick="adjustQty(-1)" class="w-9 h-9 bg-slate-800 hover:bg-slate-700 rounded-lg text-lg font-bold flex items-center justify-center">-</button>
-                        <input type="number" id="selArtQty" value="1" min="1" class="w-16 bg-slate-900 border border-slate-700 text-center rounded-lg py-2 text-sm font-bold focus:outline-none focus:border-amber-500">
-                        <button onclick="adjustQty(1)" class="w-9 h-9 bg-slate-800 hover:bg-slate-700 rounded-lg text-lg font-bold flex items-center justify-center">+</button>
-                    </div>
-                </div>
-                <!-- Pulsante inserisci in distinta subito sotto -->
-                <button onclick="addToManifest()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            <div class="flex items-center gap-2 mb-3">
+                <div class="bg-amber-500/20 text-amber-400 p-1.5 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    Inserisci in Distinta di Carico
-                </button>
+                </div>
+                <div>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">Dati Commessa</h2>
+                    <p class="text-xs text-slate-400">Intestazione Spedizione</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-400 mb-1">Cliente</label>
+                    <input type="text" id="orderClient" placeholder="👤 Inserisci ragione sociale o cliente..." oninput="saveOrderMeta()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-amber-500 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-400 mb-1">Ordine</label>
+                    <input type="text" id="orderNumber" placeholder="🏷️ Es. ORD-2026-014B" oninput="saveOrderMeta()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-amber-500 transition">
+                </div>
             </div>
         </div>
 
-        <!-- 3. Distinta Colli Attuale -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- 1. Modalità & Formati Pedana -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4">
+                <div class="flex items-center gap-2">
+                    <span class="bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded-lg text-xs">1</span>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">Modalità & Formati Pedana</h2>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 uppercase mb-2 font-semibold">Tipologia Trasporto</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div onclick="setTransport('aerea')" id="transAerea" class="border border-amber-500 bg-amber-500/10 p-3 rounded-xl cursor-pointer transition">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-sm text-white">✈️ Via Aerea</span>
+                                <span class="text-[10px] bg-amber-500 text-slate-950 font-bold px-1.5 py-0.5 rounded">ATTIVO</span>
+                            </div>
+                            <p class="text-[11px] text-slate-400">Max 140 cm x Max 750 kg</p>
+                        </div>
+                        <div onclick="setTransport('camion')" id="transCamion" class="border border-slate-800 bg-slate-950 p-3 rounded-xl cursor-pointer transition">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-sm text-slate-300">🚚 Via Camion</span>
+                                <span class="text-[10px] text-slate-500 font-bold px-1.5 py-0.5 rounded">SELEZIONA</span>
+                            </div>
+                            <p class="text-[11px] text-slate-400">Max 210 cm x Max 1500 kg</p>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 uppercase mb-2 font-semibold">Formati Pedane Consentiti</label>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-slate-950 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between">
+                            <span><b>80 × 120 cm</b><br><span class="text-[10px] text-slate-400">EPAL Standard</span></span>
+                            <span class="text-amber-400 font-bold">✔</span>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between">
+                            <span><b>114 × 114 cm</b><br><span class="text-[10px] text-slate-400">Americana / Cargo</span></span>
+                            <span class="text-amber-400 font-bold">✔</span>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between">
+                            <span><b>80 × 80 cm</b><br><span class="text-[10px] text-slate-400">Quoziente 80</span></span>
+                            <span class="text-amber-400 font-bold">✔</span>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between">
+                            <span><b>60 × 80 cm</b><br><span class="text-[10px] text-slate-400">Mezzo EPAL</span></span>
+                            <span class="text-amber-400 font-bold">✔</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Seleziona Articoli da Spedire -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded-lg text-xs">2</span>
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">Seleziona Articoli da Spedire</h2>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="openNewArticleModal()" class="bg-amber-500 text-slate-950 font-bold text-xs px-2.5 py-1.5 rounded-lg transition">+ Nuovo Articolo</button>
+                        <button onclick="importJSONModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2 py-1.5 rounded-lg border border-slate-700">Importa</button>
+                        <button onclick="exportJSON()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2 py-1.5 rounded-lg border border-slate-700">Esporta</button>
+                    </div>
+                </div>
+                <div>
+                    <input type="text" id="catalogSearch" placeholder="🔍 Cerca codice o misure..." oninput="filterCatalog()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-amber-500">
+                </div>
+                <!-- Griglia Articoli -->
+                <div id="articlesSelectionGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-44 overflow-y-auto pr-1"></div>
+                
+                <!-- Pannello Quantità e Inserimento -->
+                <div id="selectedArticlePanel" class="bg-slate-950 border border-slate-800 rounded-xl p-3 hidden space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-[10px] text-amber-400 font-bold uppercase">Articolo Selezionato</div>
+                            <div id="selArtName" class="text-xs font-semibold text-white">---</div>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <button onclick="adjustQty(-1)" class="w-7 h-7 bg-slate-800 text-white rounded-lg font-bold">-</button>
+                            <input type="number" id="selArtQty" value="1" min="1" class="w-12 bg-slate-900 border border-slate-700 text-center rounded-lg py-1 text-xs font-bold">
+                            <button onclick="adjustQty(1)" class="w-7 h-7 bg-slate-800 text-white rounded-lg font-bold">+</button>
+                        </div>
+                    </div>
+                    <button onclick="addToManifest()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 rounded-xl text-xs shadow transition">
+                        + Inserisci in distinta di carico
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Distinta Colli Inseriti -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
             <div class="flex items-center justify-between">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">3. Distinta Colli Inseriti</h2>
-                <span id="manifestCountBadge" class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-mono">0 colli</span>
+                <div class="flex items-center gap-2">
+                    <span class="bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded-lg text-xs">3</span>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">Distinta Colli Inseriti</h2>
+                </div>
+                <span id="manifestCountBadge" class="text-xs bg-slate-800 text-slate-300 px-2.5 py-0.5 rounded-full font-mono">0 colli</span>
             </div>
-            <div id="manifestList" class="space-y-2 max-h-60 overflow-y-auto pr-1">
-                <div class="text-center py-6 text-slate-500 text-sm">Nessun articolo inserito nella distinta.</div>
+            <div id="manifestList" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                <div class="text-center py-6 text-slate-500 text-xs">Nessun articolo inserito nella distinta.</div>
             </div>
         </div>
 
-        <!-- 4. Parametri Pedana e Calcola in fondo -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4">
-            <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">4. Parametri & Ottimizzazione</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1">Formato Pedana</label>
-                    <select id="palletSize" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-amber-500">
-                        <option value="80x120">80x120 cm (EPAL Standard)</option>
-                        <option value="114x114">114x114 cm (Americana)</option>
-                        <option value="80x80">80x80 cm (Quoziente 80)</option>
-                        <option value="60x80">60x80 cm (Mezzo EPAL)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1">Altezza Max (cm)</label>
-                    <input type="number" id="maxHeight" value="160" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-amber-500">
-                </div>
-            </div>
-            
-            <button onclick="calculatePallets()" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold py-4 rounded-xl shadow-xl transition flex items-center justify-center gap-2 text-base">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Calcola & Ottimizza Pedane
-            </button>
-        </div>
+        <!-- 4. Pulsante Calcola in fondo -->
+        <button onclick="calculatePallets()" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold py-4 rounded-xl shadow-xl transition flex items-center justify-center gap-2 text-base">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Calcola & Ottimizza Pedane
+        </button>
 
-        <!-- 5. Risultati Ottimizzazione & Anteprima 3D -->
+        <!-- 5. Risultati & Anteprima 3D Isometrica -->
         <div id="resultsSection" class="space-y-6 hidden">
             <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
                 <h2 class="text-base font-bold text-amber-400 flex items-center gap-2">
-                    <span>Risultati Simulazione & 3D</span>
+                    <span>Risultati Simulazione & Vista 3D</span>
                 </h2>
                 <div id="summaryBadge" class="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full font-mono"></div>
             </div>
@@ -154,14 +197,14 @@
     <div id="catalogModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 id="modalTitle" class="font-bold text-base text-amber-400">Gestione Catalogo Articoli</h3>
+                <h3 class="font-bold text-base text-amber-400">Gestione Catalogo Articoli</h3>
                 <button onclick="closeCatalogModal()" class="text-slate-400 hover:text-white p-1">✕</button>
             </div>
             <div id="catalogModalBody" class="space-y-4"></div>
         </div>
     </div>
 
-    <!-- Script App & Motore 3D Isometrico -->
+    <!-- Script Completo -->
     <script>
         let catalog = [
             { id: 'BOX-EU01', name: 'Scatola Standard 60x40', l: 60, p: 40, h: 30, weight: 12.5, maxLayers: 5 },
@@ -171,6 +214,13 @@
         ];
         let manifest = [];
         let selectedArticleId = null;
+        let transportMode = 'aerea';
+
+        function setTransport(mode) {
+            transportMode = mode;
+            document.getElementById('transAerea').className = mode === 'aerea' ? 'border border-amber-500 bg-amber-500/10 p-3 rounded-xl cursor-pointer transition' : 'border border-slate-800 bg-slate-950 p-3 rounded-xl cursor-pointer transition';
+            document.getElementById('transCamion').className = mode === 'camion' ? 'border border-amber-500 bg-amber-500/10 p-3 rounded-xl cursor-pointer transition' : 'border border-slate-800 bg-slate-950 p-3 rounded-xl cursor-pointer transition';
+        }
 
         function saveToStorage() {
             localStorage.setItem('po_catalog', JSON.stringify(catalog));
@@ -198,21 +248,23 @@
             document.getElementById('catalogCount').innerText = catalog.length;
         });
 
-        function renderArticlesSelection() {
+        function renderArticlesSelection(filter = '') {
             const grid = document.getElementById('articlesSelectionGrid');
             grid.innerHTML = '';
-            catalog.forEach(art => {
+            const filtered = catalog.filter(a => a.id.toLowerCase().includes(filter.toLowerCase()) || a.name.toLowerCase().includes(filter.toLowerCase()));
+            
+            filtered.forEach(art => {
                 const isSelected = selectedArticleId === art.id;
                 const div = document.createElement('div');
-                div.className = `p-3 rounded-xl border cursor-pointer transition flex flex-col justify-between ${isSelected ? 'bg-amber-500/10 border-amber-500 shadow-md' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`;
+                div.className = `p-2.5 rounded-xl border cursor-pointer transition flex flex-col justify-between ${isSelected ? 'bg-amber-500/10 border-amber-500 shadow' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`;
                 div.onclick = () => selectArticle(art.id);
                 div.innerHTML = `
                     <div>
-                        <div class="text-xs font-mono text-amber-400 font-bold">${art.id}</div>
+                        <div class="text-[10px] font-mono text-amber-400 font-bold">${art.id}</div>
                         <div class="text-xs font-semibold text-white truncate mt-0.5">${art.name}</div>
-                        <div class="text-[10px] text-slate-400 mt-1">${art.l}×${art.p}×${art.h} cm</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">${art.l}×${art.p}×${art.h} cm</div>
                     </div>
-                    <div class="mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                    <div class="mt-2 pt-1 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-400 font-mono">
                         <span>${art.weight} kg</span>
                         <span class="text-amber-400 font-bold">Max ${art.maxLayers}p</span>
                     </div>
@@ -221,16 +273,20 @@
             });
         }
 
+        function filterCatalog() {
+            const query = document.getElementById('catalogSearch').value;
+            renderArticlesSelection(query);
+        }
+
         function selectArticle(id) {
             selectedArticleId = id;
             const art = catalog.find(a => a.id === id);
             if(art) {
-                document.getElementById('selArtName').innerText = `${art.id} - ${art.name}`;
-                document.getElementById('selArtInfo').innerText = `Dimensioni: ${art.l}×${art.p}×${art.h} cm | Peso: ${art.weight} kg`;
+                document.getElementById('selArtName').innerText = `${art.id} — ${art.name} (${art.l}×${art.p}×${art.h} cm, ${art.weight} kg)`;
                 document.getElementById('selArtQty').value = 1;
                 document.getElementById('selectedArticlePanel').classList.remove('hidden');
             }
-            renderArticlesSelection();
+            renderArticlesSelection(document.getElementById('catalogSearch').value);
         }
 
         function adjustQty(delta) {
@@ -270,25 +326,22 @@
             badge.innerText = `${totalCols} colli`;
 
             if(manifest.length === 0) {
-                list.innerHTML = `<div class="text-center py-6 text-slate-500 text-sm">Nessun articolo inserito nella distinta.</div>`;
+                list.innerHTML = `<div class="text-center py-6 text-slate-500 text-xs">Nessun articolo inserito nella distinta.</div>`;
                 return;
             }
 
             list.innerHTML = '';
             manifest.forEach(item => {
                 const div = document.createElement('div');
-                div.className = 'bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between';
+                div.className = 'bg-slate-950 border border-slate-800 rounded-xl p-2.5 flex items-center justify-between text-xs';
                 div.innerHTML = `
                     <div>
-                        <div class="text-xs font-mono text-amber-400 font-bold">${item.id}</div>
-                        <div class="text-sm font-semibold text-white">${item.name}</div>
-                        <div class="text-xs text-slate-400">${item.l}×${item.p}×${item.h} cm • ${item.weight} kg cad.</div>
+                        <span class="font-mono text-amber-400 font-bold">${item.id}</span> — <span class="text-white">${item.name}</span>
+                        <div class="text-[10px] text-slate-400">${item.l}×${item.p}×${item.h} cm • ${item.weight} kg cad.</div>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <div class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-sm font-bold font-mono text-amber-400">
-                            ${item.qty} pz
-                        </div>
-                        <button onclick="removeFromManifest('${item.id}')" class="text-rose-400 hover:text-rose-300 p-1 text-sm font-bold">✕</button>
+                    <div class="flex items-center gap-2">
+                        <span class="bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg font-bold font-mono text-amber-400">${item.qty} pz</span>
+                        <button onclick="removeFromManifest('${item.id}')" class="text-rose-400 hover:text-rose-300 font-bold p-1">✕</button>
                     </div>
                 `;
                 list.appendChild(div);
@@ -297,19 +350,13 @@
 
         function calculatePallets() {
             if(manifest.length === 0) {
-                alert('Inserisci almeno un articolo nella distinta di carico prima di calcolare.');
+                alert('Inserisci almeno un articolo nella distinta di carico.');
                 return;
             }
 
-            const sizeKey = document.getElementById('palletSize').value;
-            const maxHeight = parseFloat(document.getElementById('maxHeight').value) || 160;
-            
-            let palDim = { 
-                '80x120': {l:80, p:120, name:'80 × 120 cm (EPAL Standard)'}, 
-                '114x114': {l:114, p:114, name:'114 × 114 cm (Americana)'}, 
-                '80x80': {l:80, p:80, name:'80 × 80 cm (Quoziente 80)'}, 
-                '60x80': {l:60, p:80, name:'60 × 80 cm (Mezzo EPAL)'} 
-            }[sizeKey] || {l:80, p:120, name:'80 × 120 cm'};
+            const maxHeight = transportMode === 'aerea' ? 140 : 210;
+            const maxWeight = transportMode === 'aerea' ? 750 : 1500;
+            let palDim = { l: 80, p: 120, name: '80 × 120 cm (EPAL Standard)' };
 
             let itemsPool = [];
             manifest.forEach(m => {
@@ -320,15 +367,13 @@
 
             let pallets = [];
             while(itemsPool.length > 0) {
-                let currentPalletBoxes = [];
                 let currentWeight = 22; 
                 let currentHeight = 10; 
-                
                 let placedThisPallet = [];
+
                 for(let i = 0; i < itemsPool.length; i++) {
                     let box = itemsPool[i];
-                    if(currentHeight + box.h <= maxHeight && currentWeight + box.weight <= 750) {
-                        // Posizionamento con coordinate simulate sul pallet
+                    if(currentHeight + box.h <= maxHeight && currentWeight + box.weight <= maxWeight) {
                         let colCount = Math.floor(palDim.l / box.l) || 1;
                         let rowCount = Math.floor(palDim.p / box.p) || 1;
                         let posIndex = placedThisPallet.length;
@@ -340,30 +385,11 @@
                         currentWeight += box.weight;
                         currentHeight = Math.max(currentHeight, 10 + box.h);
                     }
-                    if(placedThisPallet.length >= 30) break;
+                    if(placedThisPallet.length >= 28) break;
                 }
 
                 itemsPool = itemsPool.filter(b => !placedThisPallet.some(p => p.uid === b.uid));
-                pallets.push({
-                    dim: palDim,
-                    boxes: placedThisPallet,
-                    grossWeight: currentWeight,
-                    totalHeight: currentHeight
-                });
-            }
-
-            // Ribilanciamento ultima pedana se ha 1-3 colli
-            if(pallets.length > 1) {
-                let lastPallet = pallets[pallets.length - 1];
-                if(lastPallet.boxes.length > 0 && lastPallet.boxes.length <= 3) {
-                    let prevPallet = pallets[pallets.length - 2];
-                    if(prevPallet.boxes.length > 4) {
-                        let moved = prevPallet.boxes.splice(-lastPallet.boxes.length);
-                        lastPallet.boxes = moved.concat(lastPallet.boxes);
-                        prevPallet.grossWeight = 22 + prevPallet.boxes.reduce((s,b)=>s+b.weight,0);
-                        lastPallet.grossWeight = 22 + lastPallet.boxes.reduce((s,b)=>s+b.weight,0);
-                    }
-                }
+                pallets.push({ dim: palDim, boxes: placedThisPallet, grossWeight: currentWeight, totalHeight: currentHeight });
             }
 
             renderResults(pallets);
@@ -378,9 +404,8 @@
             pallets.forEach((pal, idx) => {
                 const card = document.createElement('div');
                 card.className = 'bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4';
-                
                 let weightPct = Math.min(100, Math.round((pal.grossWeight / 750) * 100));
-                let heightPct = Math.min(100, Math.round((pal.totalHeight / 160) * 100));
+                let heightPct = Math.min(100, Math.round((pal.totalHeight / 140) * 100));
 
                 card.innerHTML = `
                     <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -388,55 +413,28 @@
                             <span class="bg-amber-500 text-slate-950 font-extrabold px-2.5 py-1 rounded-lg text-xs">#${idx+1}</span>
                             <div>
                                 <h3 class="font-bold text-sm text-white">Pedana ${pal.dim.l} × ${pal.dim.p} cm</h3>
-                                <p class="text-xs text-slate-400">${pal.boxes.length} scatole • ${pal.totalHeight} cm</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="switchView(${idx}, '3d')" id="btn3d_${idx}" class="bg-amber-500 text-slate-950 px-3 py-1 rounded-lg text-xs font-bold">Vista 3D</button>
-                            <button onclick="switchView(${idx}, '2d')" id="btn2d_${idx}" class="bg-slate-800 text-slate-300 px-3 py-1 rounded-lg text-xs font-semibold">Pianta 2D</button>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <div class="flex justify-between text-xs text-slate-400 mb-1">
-                                <span>Peso Lordo (Max 750 kg)</span>
-                                <span class="font-bold text-slate-200">${weightPct}%</span>
-                            </div>
-                            <div class="text-sm font-bold text-white mb-1">${pal.grossWeight.toFixed(1)} kg</div>
-                            <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
-                                <div class="bg-amber-500 h-full" style="width: ${weightPct}%"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-xs text-slate-400 mb-1">
-                                <span>Altezza Totale</span>
-                                <span class="font-bold text-slate-200">${heightPct}%</span>
-                            </div>
-                            <div class="text-sm font-bold text-white mb-1">${pal.totalHeight} cm</div>
-                            <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
-                                <div class="bg-blue-500 h-full" style="width: ${heightPct}%"></div>
+                                <p class="text-xs text-slate-400">${pal.boxes.length} scatole totali</p>
                             </div>
                         </div>
                     </div>
-
-                    <div id="viewContainer_${idx}" class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex items-center justify-center relative min-h-[280px]">
-                        <!-- Canvas 3D Isometrico Dinamico -->
-                        <canvas id="canvas3d_${idx}" width="320" height="260" class="cursor-grab"></canvas>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1"><span>Peso Lordo</span><span class="font-bold text-white">${pal.grossWeight.toFixed(1)} kg</span></div>
+                            <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800"><div class="bg-amber-500 h-full" style="width: ${weightPct}%"></div></div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-1"><span>Altezza Totale</span><span class="font-bold text-white">${pal.totalHeight} cm</span></div>
+                            <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800"><div class="bg-blue-500 h-full" style="width: ${heightPct}%"></div></div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex items-center justify-center min-h-[240px]">
+                        <canvas id="canvas3d_${idx}" width="300" height="220"></canvas>
                     </div>
                 `;
                 container.appendChild(card);
                 drawIsoPallet(idx, pal);
             });
-
             container.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function switchView(idx, type) {
-            document.getElementById(`btn3d_${idx}`).className = type === '3d' ? 'bg-amber-500 text-slate-950 px-3 py-1 rounded-lg text-xs font-bold' : 'bg-slate-800 text-slate-300 px-3 py-1 rounded-lg text-xs font-semibold';
-            document.getElementById(`btn2d_${idx}`).className = type === '2d' ? 'bg-amber-500 text-slate-950 px-3 py-1 rounded-lg text-xs font-bold' : 'bg-slate-800 text-slate-300 px-3 py-1 rounded-lg text-xs font-semibold';
-            // Ridisegna in base alla vista
-            // (Nel canvas isometrico integrato)
         }
 
         function drawIsoPallet(idx, pal) {
@@ -444,151 +442,61 @@
             if(!canvas) return;
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             const ox = canvas.width / 2;
-            const oy = canvas.height - 40;
-            const scale = 1.2;
+            const oy = canvas.height - 30;
+            const scale = 1.0;
 
-            // Disegna Pedana di legno base
-            ctx.fillStyle = '#b45309';
-            ctx.beginPath();
-            let pw = pal.dim.l * scale;
-            let pp = pal.dim.p * scale;
-            // Isometric projection helper
             function iso(x, y, z) {
-                return {
-                    x: ox + (x - y) * 0.707 * scale,
-                    y: oy + (x + y) * 0.407 * scale - z * scale
-                };
+                return { x: ox + (x - y) * 0.707 * scale, y: oy + (x + y) * 0.407 * scale - z * scale };
             }
 
-            // Disegna le scatole
             pal.boxes.forEach((b, bIdx) => {
                 let colors = ['#f59e0b', '#3b82f6', '#ec4899', '#10b981', '#8b5cf6'];
                 let baseColor = colors[bIdx % colors.length];
+                let x = b.x - pal.dim.l/2, y = b.y - pal.dim.p/2, z = b.z;
 
-                let x = b.x - pal.dim.l/2;
-                let y = b.y - pal.dim.p/2;
-                let z = b.z;
+                let p1 = iso(x, y, z), p2 = iso(x + b.l, y, z), p3 = iso(x + b.l, y + b.p, z), p4 = iso(x, y + b.p, z);
+                let p1t = iso(x, y, z + b.h), p2t = iso(x + b.l, y, z + b.h), p3t = iso(x + b.l, y + b.p, z + b.h), p4t = iso(x, y + b.p, z + b.h);
 
-                let p1 = iso(x, y, z);
-                let p2 = iso(x + b.l, y, z);
-                let p3 = iso(x + b.l, y + b.p, z);
-                let p4 = iso(x, y + b.p, z);
-
-                let p1t = iso(x, y, z + b.h);
-                let p2t = iso(x + b.l, y, z + b.h);
-                let p3t = iso(x + b.l, y + b.p, z + b.h);
-                let p4t = iso(x, y + b.p, z + b.h);
-
-                // Top face
                 ctx.fillStyle = baseColor;
-                ctx.beginPath();
-                ctx.moveTo(p1t.x, p1t.y); ctx.lineTo(p2t.x, p2t.y); ctx.lineTo(p3t.x, p3t.y); ctx.lineTo(p4t.x, p4t.y);
-                ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(p1t.x, p1t.y); ctx.lineTo(p2t.x, p2t.y); ctx.lineTo(p3t.x, p3t.y); ctx.lineTo(p4t.x, p4t.y); ctx.closePath(); ctx.fill(); ctx.stroke();
 
-                // Right face
-                ctx.fillStyle = shadeColor(baseColor, -20);
-                ctx.beginPath();
-                ctx.moveTo(p2.x, p2.y); ctx.lineTo(p3.x, p3.y); ctx.lineTo(p3t.x, p3t.y); ctx.lineTo(p2t.x, p2t.y);
-                ctx.closePath(); ctx.fill(); ctx.stroke();
-
-                // Left face
-                ctx.fillStyle = shadeColor(baseColor, -40);
-                ctx.beginPath();
-                ctx.moveTo(p1.x, p1.y); ctx.lineTo(p4.x, p4.y); ctx.lineTo(p4t.x, p4t.y); ctx.lineTo(p1t.x, p1t.y);
-                ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = '#b45309';
+                ctx.beginPath(); ctx.moveTo(p2.x, p2.y); ctx.lineTo(p3.x, p3.y); ctx.lineTo(p3t.x, p3t.y); ctx.lineTo(p2t.x, p2t.y); ctx.closePath(); ctx.fill(); ctx.stroke();
             });
         }
 
-        function shadeColor(color, percent) {
-            let num = parseInt(color.replace("#",""), 16);
-            let amt = Math.round(2.55 * percent);
-            let R = (num >> 16) + amt;
-            let G = (num >> 8 & 0x00FF) + amt;
-            let B = (num & 0x0000FF) + amt;
-            return "#" + (0x1000000 + (R<255?R<0?0:R:255)*0x10000 + (G<255?G<0?0:G:255)*0x100 + (B<255?B<0?0:B:255)).toString(16).slice(1);
-        }
-
-        // Modal Catalogo
         function openCatalogModal() {
             const modal = document.getElementById('catalogModal');
             const body = document.getElementById('catalogModalBody');
             modal.classList.remove('hidden');
-            
-            let html = `
-                <div class="space-y-3">
-                    <div class="flex justify-between items-center">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Articoli in Catalogo</h4>
-                        <button onclick="openNewArticleForm()" class="bg-amber-500 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg">+ Aggiungi Articolo</button>
-                    </div>
-                    <div class="space-y-2 max-h-80 overflow-y-auto">
-            `;
+            let html = `<div class="space-y-3"><div class="flex justify-between items-center"><h4 class="text-xs font-bold uppercase text-slate-400">Catalogo Articoli</h4><button onclick="openNewArticleForm()" class="bg-amber-500 text-slate-950 font-bold text-xs px-3 py-1 rounded-lg">+ Nuovo</button></div><div class="space-y-2 max-h-72 overflow-y-auto">`;
             catalog.forEach(art => {
-                html += `
-                    <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
-                        <div>
-                            <div class="text-xs font-mono text-amber-400 font-bold">${art.id}</div>
-                            <div class="text-sm font-semibold text-white">${art.name}</div>
-                            <div class="text-xs text-slate-400">${art.l}×${art.p}×${art.h} cm • ${art.weight} kg</div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="editCatalogArticle('${art.id}')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg text-xs">Modifica</button>
-                            <button onclick="deleteCatalogArticle('${art.id}')" class="text-rose-400 hover:text-rose-300 p-1">✕</button>
-                        </div>
-                    </div>
-                `;
+                html += `<div class="bg-slate-950 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between text-xs"><div><span class="font-mono text-amber-400 font-bold">${art.id}</span> — <span class="text-white">${art.name}</span><div class="text-[10px] text-slate-400">${art.l}×${art.p}×${art.h} cm • ${art.weight} kg</div></div><div class="flex gap-2"><button onclick="editCatalogArticle('${art.id}')" class="bg-slate-800 text-slate-300 px-2 py-1 rounded text-xs">Modifica</button><button onclick="deleteCatalogArticle('${art.id}')" class="text-rose-400 font-bold">✕</button></div></div>`;
             });
             html += `</div></div>`;
             body.innerHTML = html;
         }
 
-        function closeCatalogModal() {
-            document.getElementById('catalogModal').classList.add('hidden');
-        }
+        function closeCatalogModal() { document.getElementById('catalogModal').classList.add('hidden'); }
 
         function openNewArticleForm(editId = null) {
             const body = document.getElementById('catalogModalBody');
             const art = editId ? catalog.find(a => a.id === editId) : { id: '', name: '', l: 40, p: 30, h: 25, weight: 10, maxLayers: 5 };
-            
             body.innerHTML = `
-                <form onsubmit="saveCatalogArticle(event, '${editId || ''}')" class="space-y-3">
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1">Codice Articolo</label>
-                        <input type="text" id="artIdInput" value="${art.id}" ${editId ? 'readonly' : ''} required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1">Nome / Descrizione</label>
-                        <input type="text" id="artNameInput" value="${art.name}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
-                    </div>
+                <form onsubmit="saveCatalogArticle(event, '${editId || ''}')" class="space-y-3 text-xs">
+                    <div><label class="text-slate-400">Codice Articolo</label><input type="text" id="artIdInput" value="${art.id}" ${editId ? 'readonly' : ''} required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 mt-1"></div>
+                    <div><label class="text-slate-400">Descrizione</label><input type="text" id="artNameInput" value="${art.name}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 mt-1"></div>
                     <div class="grid grid-cols-3 gap-2">
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1">Lungh. (cm)</label>
-                            <input type="number" id="artLInput" value="${art.l}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1">Prof. (cm)</label>
-                            <input type="number" id="artPInput" value="${art.p}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1">Alt. (cm)</label>
-                            <input type="number" id="artHInput" value="${art.h}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
-                        </div>
+                        <div><label class="text-slate-400">Lungh (cm)</label><input type="number" id="artLInput" value="${art.l}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 mt-1"></div>
+                        <div><label class="text-slate-400">Prof (cm)</label><input type="number" id="artPInput" value="${art.p}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 mt-1"></div>
+                        <div><label class="text-slate-400">Alt (cm)</label><input type="number" id="artHInput" value="${art.h}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 mt-1"></div>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1">Peso (kg)</label>
-                            <input type="number" step="0.1" id="artWeightInput" value="${art.weight}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1">Max Piani</label>
-                            <input type="number" id="artMaxLInput" value="${art.maxLayers}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
-                        </div>
+                        <div><label class="text-slate-400">Peso (kg)</label><input type="number" step="0.1" id="artWeightInput" value="${art.weight}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 mt-1"></div>
+                        <div><label class="text-slate-400">Max Piani</label><input type="number" id="artMaxLInput" value="${art.maxLayers}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 mt-1"></div>
                     </div>
-                    <div class="flex gap-2 pt-2">
-                        <button type="button" onclick="openCatalogModal()" class="w-1/2 bg-slate-800 hover:bg-slate-700 py-2.5 rounded-xl text-xs font-semibold">Annulla</button>
-                        <button type="submit" class="w-1/2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs">Salva Articolo</button>
-                    </div>
+                    <div class="flex gap-2 pt-2"><button type="button" onclick="openCatalogModal()" class="w-1/2 bg-slate-800 py-2 rounded-xl">Annulla</button><button type="submit" class="w-1/2 bg-amber-500 text-slate-950 font-bold py-2 rounded-xl">Salva</button></div>
                 </form>
             `;
         }
@@ -607,10 +515,7 @@
                 const idx = catalog.findIndex(a => a.id === oldId);
                 if(idx !== -1) catalog[idx] = { id, name, l, p, h, weight, maxLayers };
             } else {
-                if(catalog.some(a => a.id === id)) {
-                    alert('Esiste già un articolo con questo codice!');
-                    return;
-                }
+                if(catalog.some(a => a.id === id)) { alert('Codice già esistente!'); return; }
                 catalog.push({ id, name, l, p, h, weight, maxLayers });
             }
             saveToStorage();
@@ -619,12 +524,9 @@
             openCatalogModal();
         }
 
-        function editCatalogArticle(id) {
-            openNewArticleForm(id);
-        }
-
+        function editCatalogArticle(id) { openNewArticleForm(id); }
         function deleteCatalogArticle(id) {
-            if(confirm('Eliminare questo articolo dal catalogo?')) {
+            if(confirm('Eliminare articolo?')) {
                 catalog = catalog.filter(a => a.id !== id);
                 saveToStorage();
                 renderArticlesSelection();
@@ -637,38 +539,42 @@
             const data = { catalog, manifest, client: document.getElementById('orderClient').value, order: document.getElementById('orderNumber').value };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `PalletOptimizer_Backup_${new Date().toISOString().slice(0,10)}.json`;
-            a.click();
+            const a = document.createElement('a'); a.href = url; a.download = `PalletOptimizer_Backup.json`; a.click();
         }
 
-        function importJSON(e) {
-            const file = e.target.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                try {
-                    const data = JSON.parse(evt.target.result);
-                    if(data.catalog) catalog = data.catalog;
-                    if(data.manifest) manifest = data.manifest;
-                    if(data.client) { document.getElementById('orderClient').value = data.client; }
-                    if(data.order) { document.getElementById('orderNumber').value = data.order; }
-                    saveToStorage();
-                    renderArticlesSelection();
-                    renderManifest();
-                    document.getElementById('catalogCount').innerText = catalog.length;
-                    alert('Dati importati con successo!');
-                } catch(err) {
-                    alert('Errore durante la lettura del file JSON.');
-                }
+        function importJSONModal() {
+            const input = document.createElement('input');
+            input.type = 'file'; input.accept = '.json';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                if(!file) return;
+                const reader = new FileReader();
+                reader.onload = evt => {
+                    try {
+                        const data = JSON.parse(evt.target.result);
+                        if(data.catalog) catalog = data.catalog;
+                        if(data.manifest) manifest = data.manifest;
+                        if(data.client) document.getElementById('orderClient').value = data.client;
+                        if(data.order) document.getElementById('orderNumber').value = data.order;
+                        saveToStorage(); renderArticlesSelection(); renderManifest();
+                        document.getElementById('catalogCount').innerText = catalog.length;
+                        alert('Importazione completata!');
+                    } catch(err) { alert('Errore file JSON'); }
+                };
+                reader.readAsText(file);
             };
-            reader.readAsText(file);
+            input.click();
         }
 
-        function printReport() {
-            window.print();
+        function shareAppCode() {
+            const htmlContent = document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'index.html'; a.click();
         }
+
+        function printReport() { window.print(); }
     </script>
 </body>
 </html>
